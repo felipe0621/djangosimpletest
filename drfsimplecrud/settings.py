@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
+import os
+import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +24,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&&@p!1whplgfo1oop614lg6kt14d&0qlx-$6uhb=of@_pi@@*q'
+#SECRET_KEY = 'django-insecure-&&@p!1whplgfo1oop614lg6kt14d&0qlx-$6uhb=of@_pi@@*q'
+SECRET_KEY = os.environ.get('SECRET_KEY', default='your secret key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+#DEBUG = True
+DEBUG = 'RENDER' not in os.environ
+
 
 ALLOWED_HOSTS = []
+
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:  
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 
 # Application definition
@@ -57,6 +67,7 @@ SIMPLE_JWT = { 'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -73,7 +84,7 @@ REST_FRAMEWORK = { 'DEFAULT_PERMISSION_CLASSES': (
                 ) 
 }
 
-AUTH_USER_MODEL = 'projects.User'
+#AUTH_USER_MODEL = 'projects.User'
 
 
 ROOT_URLCONF = 'drfsimplecrud.urls'
@@ -101,13 +112,9 @@ WSGI_APPLICATION = 'drfsimplecrud.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = { 
-    'default': { 'ENGINE': 'django.db.backends.postgresql_psycopg2', 
-    'NAME': 'dbbuqjb4toh4rn',
-    'USER': 'vujypjvkqopvik', 
-    'PASSWORD': '210c8b75307b5e32e066133377b4ed894a823aefc2ddb370bfddd48b2f81f17e', 
-    'HOST': 'ec2-44-209-158-64.compute-1.amazonaws.com',
-    'PORT': '5432', 
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600 )
  }
 
 
@@ -147,6 +154,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+if not DEBUG:    
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
